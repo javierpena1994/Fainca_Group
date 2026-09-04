@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "https://www.eclipse.org/jetty/configure_10_0.dtd">
+
+<!--
+  Conector HTTPS para el Sistema de Inventario FAINCA.
+
+  Agrega el puerto 3443 cifrado SIN quitar el 3000: asi, si algo fallara con el
+  certificado, el sistema sigue accesible por HTTP y nadie se queda sin trabajar.
+
+  El certificado es autofirmado (config/fainca-ssl.p12). La primera vez, el
+  navegador mostrara un aviso de "sitio no seguro": es esperado, porque el
+  certificado no lo emitio una autoridad publica. El trafico va cifrado igual.
+-->
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+
+    <New id="sslContextFactory" class="org.eclipse.jetty.util.ssl.SslContextFactory$Server">
+        <!-- Ruta relativa a la carpeta del proyecto (donde corre Maven).
+             En una sola linea a proposito: si se parte, la ruta se llena de espacios. -->
+        <Set name="KeyStorePath">config/fainca-ssl.p12</Set>
+        <Set name="KeyStoreType">PKCS12</Set>
+        <Set name="KeyStorePassword">faincaSSL2026</Set>
+        <Set name="KeyManagerPassword">faincaSSL2026</Set>
+    </New>
+
+    <New id="httpsConfig" class="org.eclipse.jetty.server.HttpConfiguration">
+        <Set name="secureScheme">https</Set>
+        <Set name="securePort">
+            <Property name="fainca.https.port" default="3000"/>
+        </Set>
+        <Set name="sendServerVersion">false</Set>
+        <Call name="addCustomizer">
+            <Arg>
+                <New class="org.eclipse.jetty.server.SecureRequestCustomizer">
+                    <!-- sniHostCheck = false: al entrar por IP (192.168.10.65) no hay
+                         nombre de dominio que validar; con true, Jetty responderia
+                         "Invalid SNI" y nadie podria entrar. -->
+                    <Arg type="boolean">false</Arg>
+                </New>
+            </Arg>
+        </Call>
+    </New>
+
+    <Call name="addConnector">
+        <Arg>
+            <New class="org.eclipse.jetty.server.ServerConnector">
+                <Arg name="server"><Ref refid="Server"/></Arg>
+                <Arg name="factories">
+                    <Array type="org.eclipse.jetty.server.ConnectionFactory">
+                        <!-- El detector mira los primeros bytes de cada conexion:
+                             si es un saludo TLS, la atiende cifrada; si es HTTP plano,
+                             la deja pasar a la siguiente fabrica. Asi un MISMO puerto
+                             sirve https:// y http://, y quien escriba la direccion vieja
+                             no se topa con una pagina rota, sino con la redireccion. -->
+                        <Item>
+                            <New class="org.eclipse.jetty.server.DetectorConnectionFactory">
+                                <Arg>
+                                    <!-- El constructor recibe ConnectionFactory.Detecting..., no
+                                         ConnectionFactory: el tipo del arreglo debe ser el interno. -->
+                                    <Array type="org.eclipse.jetty.server.ConnectionFactory$Detecting">
+                                        <Item>
+                                            <New class="org.eclipse.jetty.server.SslConnectionFactory">
+                                                <Arg><Ref refid="sslContextFactory"/></Arg>
+                                                <Arg>http/1.1</Arg>
+                                            </New>
+                                        </Item>
+                                    </Array>
+                                </Arg>
+                            </New>
+                        </Item>
+                        <Item>
+                            <New class="org.eclipse.jetty.server.HttpConnectionFactory">
+                                <Arg><Ref refid="httpsConfig"/></Arg>
+                            </New>
+                        </Item>
+                    </Array>
+                </Arg>
+                <Set name="host">0.0.0.0</Set>
+                <!-- Puerto principal: HTTPS ocupa el 3000, la direccion que ya conoce
+                     todo el mundo. Se puede sobrescribir para pruebas con
+                     -Dfainca.https.port=XXXX -->
+                <Set name="port">
+                    <Property name="fainca.https.port" default="3000"/>
+                </Set>
+                <Set name="idleTimeout">30000</Set>
+            </New>
+        </Arg>
+    </Call>
+
+</Configure>

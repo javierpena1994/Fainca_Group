@@ -1,0 +1,42 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Iniciar Servidor FAINCA (Jetty 3000)",
+            "type": "shell",
+            "command": "./iniciar-servidor.sh",
+            "options": {
+                "cwd": "${workspaceFolder}/1-Aplicacion/fainca"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Empaquetar WAR (mvn clean package)",
+            "type": "shell",
+            "command": "./mvnw clean package",
+            "options": {
+                "cwd": "${workspaceFolder}/1-Aplicacion/fainca"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
+

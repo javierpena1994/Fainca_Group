@@ -1,0 +1,113 @@
+========================================================================
+  SISTEMA DE INVENTARIO FAINCA
+  Paquete de entrega para el Departamento de TI
+========================================================================
+
+Elaborado por: J. Pena & S. Vinces
+Fecha de esta entrega: 11 de agosto de 2026
+
+El sistema controla DOS bodegas independientes:
+
+  * Bodega #1  - productos que la empresa comercializa (repuestos,
+                 componentes mecanicos y electricos).
+  * Bodega de Herramientas - las herramientas y consumibles que se
+                 prestan al personal de planta para los proyectos.
+
+Son modulos separados dentro de la misma aplicacion: usan tablas y
+pantallas propias, y no se mezclan entre si.
+
+
+
+------------------------------------------------------------------------
+QUE CONTIENE ESTE PAQUETE
+------------------------------------------------------------------------
+
+  1-Aplicacion\
+        Todo el codigo fuente del sistema (proyecto Maven).
+        Incluye la carpeta "db\" con el esquema y las migraciones,
+        la carpeta "respaldo\" con el respaldo automatico, y los
+        archivos de configuracion. NO incluye la carpeta "target\"
+        porque se regenera sola al compilar.
+
+  2-Base-de-datos\
+        base-datos-completa.sql  ->  volcado completo de la base
+        "fainca_inventario" con TODA la informacion actual (productos,
+        movimientos, usuarios, marcas, herramientas y actas).
+        Ya trae aplicadas todas las migraciones: NO hace falta correr
+        nada de la carpeta db\ sobre este volcado.
+
+  3-Imagenes-de-productos\
+        Las fotos de referencia de los productos (~1290 archivos).
+        VIVEN FUERA de la base de datos: si se restaura solo el .sql
+        sin estas imagenes, los productos quedan con la foto rota.
+
+  4-Documentacion\
+        Manual de Usuario y Documentacion Tecnica, en Word y PDF.
+        AVISO: estos dos documentos son anteriores al modulo de la
+        bodega de herramientas, asi que no lo describen. Mientras se
+        actualizan, ver el archivo:
+            ANEXO-Bodega-de-herramientas.txt  (en esta misma carpeta)
+
+
+------------------------------------------------------------------------
+COMO PONERLO EN MARCHA EN EL SERVIDOR (resumen)
+------------------------------------------------------------------------
+
+Requisitos: JDK 21+, Apache Maven 3.9+, MySQL 8.
+
+  1) Crear la base cargando el volcado:
+       mysql -u root -p < "2-Base-de-datos\base-datos-completa.sql"
+
+  2) Copiar las imagenes a una carpeta del servidor, por ejemplo:
+       C:\fainca-inventario\imagenes
+     (o la ruta que definan; ver el paso 3).
+
+  3) Ajustar la conexion y la ruta de imagenes en:
+       1-Aplicacion\fainca\src\main\resources\db.properties
+     - db.url / db.usuario / db.password  ->  segun el MySQL del servidor
+     - app.imagenes.carpeta               ->  la carpeta del paso 2
+
+  4) Arrancar (desde la carpeta que contiene el pom.xml):
+       cd 1-Aplicacion\fainca
+       mvn jetty:run
+     Estara listo cuando aparezca:
+       "Started ServerConnector ... 0.0.0.0:3000"
+     Acceso:  http://[IP-DEL-SERVIDOR]:3000/
+
+     Para generar el paquete desplegable (WAR) en un Tomcat 10+/Jetty 11+:
+       mvn clean package   ->   target\fainca.war
+
+La Documentacion Tecnica (carpeta 4) tiene el detalle completo de cada
+paso en su seccion "Instalacion y despliegue".
+
+
+------------------------------------------------------------------------
+NOTAS DE SEGURIDAD (recomendaciones para el servidor)
+------------------------------------------------------------------------
+
+  - Credenciales: hoy la app se conecta como "root". Para el servidor
+    conviene crear un usuario de MySQL exclusivo, con permisos solo sobre
+    la base "fainca_inventario", y actualizar db.properties.
+
+  - HTTPS: la configuracion de cifrado esta LISTA pero desactivada (se
+    uso un certificado propio que mostraba aviso de "no seguro"). Para
+    reactivarla ver:  1-Aplicacion\fainca\config\LEEME-HTTPS.md
+    Lo ideal es emitir el certificado desde la autoridad certificadora
+    interna de la empresa.
+
+  - Respaldo automatico: hay un script listo en 1-Aplicacion\respaldo\
+    (con su instructivo COMO-RESTAURAR.md). Conviene integrarlo a la
+    politica de respaldos que ya tenga la empresa.
+    IMPORTANTE: el respaldo cubre toda la base, incluidas las tablas
+    nuevas de herramientas, sin necesidad de cambiarle nada.
+
+  - Proteccion de acceso: el login bloquea la cuenta por 5 minutos tras
+    5 intentos fallidos de contrasena.
+
+  - Compatibilidad: el sistema usa jakarta.servlet (Servlet 5). NO corre
+    en Tomcat 9 o anterior (esos usan javax.servlet).
+
+
+------------------------------------------------------------------------
+Cualquier duda del funcionamiento esta en la Documentacion (carpeta 4).
+========================================================================

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Maven Wrapper helper for FAINCA
+
+if [ -z "$JAVA_HOME" ] || [ ! -x "$JAVA_HOME/bin/java" ]; then
+    if [ -d "/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ]; then
+        export JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home"
+    elif command -v /usr/libexec/java_home >/dev/null 2>&1; then
+        export JAVA_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null || /usr/libexec/java_home)"
+    fi
+fi
+
+if [ -n "$JAVA_HOME" ]; then
+    export PATH="$JAVA_HOME/bin:$PATH"
+fi
+
+MVN_BIN=""
+if command -v mvn >/dev/null 2>&1; then
+    MVN_BIN="mvn"
+elif [ -x "/Users/javierpena/.m2/wrapper/dists/apache-maven-3.9.16/56ba1f9f/bin/mvn" ]; then
+    MVN_BIN="/Users/javierpena/.m2/wrapper/dists/apache-maven-3.9.16/56ba1f9f/bin/mvn"
+fi
+
+if [ -z "$MVN_BIN" ]; then
+    echo "Error: No se encontró Maven ni en PATH ni en ~/.m2/wrapper" >&2
+    exit 1
+fi
+
+exec "$MVN_BIN" "$@"
+

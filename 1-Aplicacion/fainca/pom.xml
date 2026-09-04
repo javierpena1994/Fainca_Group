@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.example</groupId>
+    <artifactId>fainca</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
+
+    <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- El puerto lo define config/jetty-ssl.xml (3000, cifrado). Se puede cambiar
+             al arrancar con: mvn jetty:run -Dfainca.https.port=3001 -->
+        <puerto>3000</puerto>
+    </properties>
+
+    <dependencies>
+        <!-- API de Servlets (la provee Jetty/Tomcat, por eso scope provided).
+             OJO: es jakarta.servlet.*, no javax.servlet.* -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>5.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Driver de MySQL -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.4.0</version>
+        </dependency>
+
+        <!-- JSON para los endpoints AJAX (busqueda en vivo, movimientos, historial) -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.11.0</version>
+        </dependency>
+
+        <!-- Verificacion de contrasenas bcrypt (compatible con los hashes $2a$ existentes) -->
+        <dependency>
+            <groupId>at.favre.lib</groupId>
+            <artifactId>bcrypt</artifactId>
+            <version>0.10.2</version>
+        </dependency>
+
+        <!-- Generacion de reportes Excel (.xlsx) para la exportacion del inventario -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.3.0</version>
+        </dependency>
+
+        <!-- Generacion de reportes PDF (fork LGPL de iText, apto para uso interno) -->
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>1.3.35</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>fainca</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+            </plugin>
+
+            <!-- Servidor de desarrollo: mvn jetty:run  (puerto 3000) -->
+            <plugin>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>11.0.24</version>
+                <configuration>
+                    <webApp>
+                        <contextPath>/</contextPath>
+                    </webApp>
+                    <httpConnector>
+                        <port>${puerto}</port>
+                    </httpConnector>
+
+                    <!-- ===================== HTTPS (DESACTIVADO) =====================
+                         La configuracion de HTTPS esta lista y probada en
+                         config/jetty-ssl.xml, con su certificado en
+                         config/fainca-ssl.p12 (valido hasta 2036).
+
+                         Se dejo DESACTIVADA a proposito: al ser un certificado propio,
+                         los navegadores muestran "No seguro" mientras no se instale en
+                         cada dispositivo de la red, y eso generaba desconfianza en los
+                         usuarios. El endurecimiento queda a cargo del departamento de TI.
+
+                         Para reactivarlo: descomentar el bloque <jettyXmls> de abajo y
+                         quitar el <httpConnector> de arriba. Ver config/LEEME-HTTPS.md
+                    ================================================================= -->
+                    <!--
+                    <jettyXmls>
+                        <jettyXml>${project.basedir}/config/jetty-ssl.xml</jettyXml>
+                    </jettyXmls>
+                    -->
+
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

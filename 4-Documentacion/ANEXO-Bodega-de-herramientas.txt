@@ -1,0 +1,136 @@
+========================================================================
+  ANEXO - MODULO "BODEGA DE HERRAMIENTAS"
+  Sistema de Inventario FAINCA
+========================================================================
+
+Este anexo describe el modulo agregado en agosto de 2026, que todavia no
+aparece en el Manual de Usuario ni en la Documentacion Tecnica.
+
+
+------------------------------------------------------------------------
+1. PARA QUE SIRVE
+------------------------------------------------------------------------
+
+La Bodega #1 controla productos que SALEN y no vuelven. Las herramientas
+son distinto: SALEN y DEBEN VOLVER. Lo que interesa registrar no es solo
+el stock, sino el ciclo completo: que salio, con quien, que volvio, en
+que estado, y que no volvio.
+
+Ese ultimo dato (lo danado, lo perdido y lo que sigue en el proyecto) es
+el que necesita bodega para justificar reposiciones.
+
+Los dos inventarios estan SEPARADOS a proposito: tablas propias, pantallas
+propias y un menu propio. No se mezclan.
+
+
+------------------------------------------------------------------------
+2. COMO SE NAVEGA
+------------------------------------------------------------------------
+
+En la parte superior del menu lateral hay dos botones:
+
+    [casita]     ->  Bodega #1 (productos)
+    [caja herr.] ->  Bodega de Herramientas
+
+Al entrar a herramientas el menu cambia por completo y muestra solo sus
+cuatro pantallas. Para volver, el boton de la casita.
+
+
+------------------------------------------------------------------------
+3. LAS CINCO PANTALLAS
+------------------------------------------------------------------------
+
+  HERRAMIENTAS (catalogo)
+      Lista de todo lo que posee la bodega, con cuatro contadores por
+      item: Disponible (en bodega), En proyectos (prestado), Danadas y
+      Total. Se cumple siempre:
+              En proyectos = Total - Disponible - Danadas
+
+      Hay dos tipos de item:
+        - "herramienta": se presta y debe volver (taladros, maletas...)
+        - "consumible":  se entrega y se gasta (pernos, discos, EPP...)
+      Un consumible descuenta del total al entregarse, por eso su
+      "En proyectos" siempre es 0.
+
+      El nombre identifica a la herramienta: NO hay codigo. La marca, el
+      estado o lo que le falte van en su observacion. Los nombres se
+      guardan siempre en MAYUSCULAS y no se permiten duplicados
+      (la comparacion ignora mayusculas y acentos).
+
+      Botones de cada fila:
+        lapiz  -> corregir como quedo escrito el nombre
+        llave  -> resolver unidades danadas (repararlas o darlas de baja)
+        reloj  -> ver el historial de esa herramienta
+
+      El selector "Vista" filtra solo lo que hay que reponer: items con
+      unidades danadas o consumibles en (o bajo) su stock minimo.
+
+  AJUSTE DE HERRAMIENTAS
+      Sumar o restar unidades (compras, correcciones, descartes) y
+      actualizar la observacion. Admite varias herramientas a la vez y
+      exige un motivo, que queda en el historial.
+      Es TODO O NADA: si una linea no cabe, no se aplica ninguna.
+
+  ENTREGAR (ACTA)
+      Registra lo que un tecnico se lleva. Cabecera con Solicitante,
+      Proyecto y Destino, y la lista de herramientas con su cantidad y
+      observacion (series, numeros de parte...).
+      Genera un PDF con espacio para las dos firmas: ENTREGADO POR y
+      RECIBIDO POR.
+      Tambien es TODO O NADA: es un documento que se firma, no puede
+      quedar registrado a medias.
+
+  ACTAS Y DEVOLUCIONES
+      Las actas quedan ABIERTAS mientras haya algo sin devolver.
+      Al desplegar una, por cada linea se registra cuanto vuelve BIEN,
+      cuanto DANADO y cuanto se declara PERDIDO. Lo que no se reporta
+      sigue "en proyecto".
+      Admite devoluciones en varias tandas, y el acta se cierra sola
+      cuando todo queda saldado.
+      Efecto de cada caso en el stock:
+        bien    -> vuelve a Disponible
+        danado  -> pasa a Danadas (no se puede prestar hasta repararla)
+        perdido -> se descuenta del Total de la bodega
+
+  HISTORIAL
+      Libro inmutable de todo lo que paso. Muestra UNA fila por
+      operacion (no por herramienta): si un acta entrego 5 herramientas,
+      es una sola fila que se despliega para ver el detalle.
+      Tipos de movimiento: ingreso, entrega, devolucion, danado, perdida,
+      reparacion, baja, ajuste y edicion.
+
+
+------------------------------------------------------------------------
+4. MODELO DE DATOS (para mantenimiento)
+------------------------------------------------------------------------
+
+  herramientas
+      Catalogo con los contadores. "nombre" es UNIQUE.
+
+  actas_herramientas
+      Cabecera del acta (solicitante, proyecto, destino, estado).
+
+  actas_herramientas_lineas
+      Que se llevo y como se ha ido saldando (devuelto_ok,
+      devuelto_danado, perdido, consumido).
+
+  movimientos_herramientas
+      Libro mayor. Cada cambio de stock pasa por aqui, en la MISMA
+      transaccion que actualiza los contadores: es imposible que quede
+      un movimiento sin su efecto, o al reves.
+      La columna "lote" agrupa las lineas registradas en una misma
+      operacion; de ahi sale la vista agrupada del historial.
+
+  Migraciones que lo crearon (ya aplicadas en el volcado):
+      db\migracion-herramientas.sql       tablas iniciales
+      db\migracion-herramientas-v2.sql    nombre como identificador + lote
+      db\migracion-herramientas-v3.sql    tipo 'edicion'
+      db\migracion-herramientas-v4.sql    destino del acta
+
+  Las actas y los movimientos apuntan al ID de la herramienta, no a su
+  nombre: por eso renombrar una herramienta no rompe ni despega ningun
+  registro anterior. Lo que si cambia es como se muestra ese pasado (se
+  ve el nombre actual), por eso todo renombre queda anotado en el
+  historial con el nombre anterior y el nuevo.
+
+========================================================================
