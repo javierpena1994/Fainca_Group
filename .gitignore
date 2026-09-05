@@ -1,0 +1,61 @@
+# ==============================================================================
+# Git Ignore — Sistema de Inventario FAINCA
+# ==============================================================================
+
+# Compilación y artefactos de Java / Maven
+target/
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+# Entornos de desarrollo y editores (IDEs)
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.code-workspace
+.settings/
+.project
+.classpath
+.factorypath
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Metadatos de Sistema Operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Base de datos local y almacenamiento temporal de pruebas
+.db_data/
+*.sock
+*.pid
+
+# Registros y logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos de volcado temporal o respaldos locales de emergencia
+*.sql.bak
+*.dump.bak
+*.tmp
+*.bak
+

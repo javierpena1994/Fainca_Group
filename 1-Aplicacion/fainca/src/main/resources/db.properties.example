@@ -1,0 +1,22 @@
+# ==============================================================================
+# FAINCA - Configuración de Base de Datos y Almacenamiento de Archivos
+# ==============================================================================
+# Copie este archivo como 'db.properties' en este mismo directorio y configure
+# los valores correspondientes a su entorno (desarrollo o producción).
+
+# Cadena de conexión JDBC para MySQL 8
+# Ajuste el host (127.0.0.1 o IP del servidor), puerto (ej. 3306 o 3307) y nombre de base de datos
+db.url=jdbc:mysql://127.0.0.1:3306/fainca_inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Guayaquil&characterEncoding=utf8
+
+# Credenciales de acceso a MySQL
+# Se recomienda un usuario dedicado con permisos sobre 'fainca_inventario'
+db.usuario=fainca_user
+db.password=TuContrasenaSeguraAqui
+
+# Directorio absoluto del sistema de archivos donde se almacenan las fotos de referencia
+# de los productos (Bodega #1). Viven fuera de la carpeta web para persistir tras redespliegues.
+# Ejemplos:
+#   Windows: C:/fainca-inventario/imagenes
+#   Linux/macOS: /var/fainca/imagenes o /ruta/absoluta/a/3-Imagenes-de-productos
+app.imagenes.carpeta=/ruta/absoluta/a/3-Imagenes-de-productos
+

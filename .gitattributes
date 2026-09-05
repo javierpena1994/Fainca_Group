@@ -1,0 +1,45 @@
+# ==============================================================================
+# Git Attributes — Normalización de saltos de línea y tipos de archivo
+# ==============================================================================
+
+# Manejo automático de texto por defecto
+* text=auto
+
+# Archivos de código fuente y configuración (estilo LF para Unix/Linux/macOS)
+*.java text eol=lf
+*.jsp text eol=lf
+*.xml text eol=lf
+*.properties text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.html text eol=lf
+*.sql text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.sh text eol=lf
+*.command text eol=lf
+
+# Scripts de Windows (estilo CRLF)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Archivos Binarios
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.jar binary
+*.war binary
+*.p12 binary
+*.cer binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+

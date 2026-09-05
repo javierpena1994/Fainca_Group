@@ -1,89 +1,99 @@
-# Inventario FAINCA — Bodega #1 (Java / JSP)
+# Módulo de Aplicación — Sistema de Inventario FAINCA (Java EE / JSP)
 
-Sistema de control de inventario que reemplaza los Excel dispersos por una
-sola fuente de verdad en MySQL, con historial completo de movimientos.
+Núcleo de software del **Sistema de Inventario FAINCA**, desarrollado con arquitectura multicapa desacoplada sobre el stack **Jakarta Servlet 5.0 + JSP + JDBC + MySQL 8** con empaquetado Apache Maven.
 
-Construido con el stack del equipo: **JSP + Servlets + JDBC + MySQL**
-(proyecto Maven en `fainca/`, estructura `Objetos/`, `Dao/`, `Servlets/`).
+---
 
-## Roles
+## 🏗 Arquitectura del Código Fuente (`fainca/`)
 
-- **admin**: consulta completa, registrar/editar/eliminar productos, marcas,
-  ingresos/egresos (multi-producto, con fecha opcional), historial.
-- **ventas**: solo consulta de stock por código/descripción, en tiempo real.
-
-## Requisitos
-
-- Java JDK 21+ (instalado: JDK 22)
-- Maven (instalado en `C:\Users\PC\apache-maven`)
-- MySQL 8+ (servicio `MySQL84`, arranca automático)
-
-## Base de datos
-
-```bash
-# Crear tablas (solo la primera vez)
-mysql -u root -p < db/schema.sql
-# Usuarios iniciales (contraseña temporal: CambiarClave123)
-mysql -u root -p < db/usuarios-iniciales.sql
-```
-
-Conexión configurada en `fainca/src/main/resources/db.properties`.
-
-## Ejecutar en desarrollo
-
-```bash
-cd fainca
-mvn jetty:run          # levanta en http://localhost:3000/
-mvn jetty:run -Dpuerto=3001   # en otro puerto si el 3000 esta ocupado
-```
-
-Usuarios de prueba: `victor` (admin) y `ventas1` (ventas), contraseña
-temporal `CambiarClave123`.
-
-## Servidor local (arranque automático + acceso desde celular)
-
-Ejecutar `configurar-servidor.ps1` en PowerShell **como Administrador**
-(instrucciones dentro del archivo). Deja la IP fija en `192.168.10.65`,
-abre el puerto 3000 y crea la tarea que arranca el servidor al iniciar
-sesión en esta PC.
-
-- Desde esta PC: `http://localhost:3000/`
-- Desde celulares/PCs de ventas (misma red Wi-Fi): `http://192.168.10.65:3000/`
-
-## Estructura del proyecto
-
-```
+```text
 fainca/
-├── pom.xml                      # Maven: dependencias y servidor Jetty
-├── iniciar-servidor.cmd         # lanzador usado por la tarea programada
+├── pom.xml                               # Configuración de dependencias Maven y plugin Jetty 11
+├── iniciar-servidor.sh                  # Lanzador del servidor de desarrollo para macOS/Linux
+├── config/                               # Infraestructura de certificados y configuración HTTPS
+│   ├── LEEME-HTTPS.md                   # Procedimiento de activación de TLS
+│   ├── fainca-certificado.cer           # Certificado público
+│   ├── fainca-ssl.p12                   # Almacén de claves PKCS12
+│   └── jetty-ssl.xml                    # Configuración SSL para Jetty
 └── src/main/
     ├── java/
-    │   ├── Objetos/             # Usuario, Marca, Producto, Movimiento
-    │   ├── Dao/                 # Db (conexión), UsuarioDAO, MarcaDAO, ProductoDAO, MovimientoDAO
-    │   ├── Servlets/            # Login, Buscar, Productos, Registrar, Editar, Eliminar,
-    │   │                        #   Movimiento, Historial, Marca, CambiarPassword, Logout
-    │   └── Filtros/AuthFilter   # sesión + roles en todas las rutas
-    ├── resources/db.properties  # conexión MySQL
+    │   ├── Dao/                         # Capa de Acceso a Datos (JDBC + PreparedStatements)
+    │   │   ├── Db.java                  # Administrador central de conexiones MySQL
+    │   │   ├── ProductoDAO.java         # CRUD y control de stock de Bodega #1
+    │   │   ├── MovimientoDAO.java       # Libro mayor de movimientos de Bodega #1
+    │   │   ├── HerramientaDAO.java      # Control de herramientas, consumibles y contadores
+    │   │   ├── ActaHerramientaDAO.java  # Gestión transaccional de actas y líneas de devolución
+    │   │   ├── UsuarioDAO.java          # Autenticación, bloqueo por fuerza bruta y usuarios
+    │   │   ├── MarcaDAO.java            # Gestión de marcas comerciales
+    │   │   ├── ReporteDAO.java          # Consultas para exportación y dashboard
+    │   │   └── Codigo.java              # Utilidades de normalización y códigos
+    │   ├── Filtros/                     # Interceptores de peticiones HTTP
+    │   │   ├── AuthFilter.java          # Control de autenticación y roles (superadmin, admin, ventas)
+    │   │   └── CacheFilter.java         # Encabezados de control de caché en respuestas
+    │   ├── Objetos/                     # Modelos de Dominio / POJOs
+    │   │   ├── Producto.java            # Entidad de producto de Bodega #1
+    │   │   ├── Movimiento.java          # Registro de auditoría de Bodega #1
+    │   │   ├── Herramienta.java         # Entidad de herramienta/consumible
+    │   │   ├── ActaHerramienta.java     # Cabecera de acta de entrega
+    │   │   ├── ActaLineaHerramienta.java# Detalle y estado de liquidación por ítem
+    │   │   ├── MovimientoHerramienta.java # Auditoría de movimientos de herramientas
+    │   │   ├── Usuario.java             # Usuario del sistema y evaluación de rol
+    │   │   └── Marca.java               # Marca de producto
+    │   ├── Reportes/                    # Generadores de documentos ofimáticos
+    │   │   ├── ActaHerramientasPdf.java # Emisión del documento oficial de acta de herramientas
+    │   │   ├── ComprobanteMovimiento.java # Comprobante de ingreso/egreso
+    │   │   ├── ReportePdf.java          # Reportes consolidados en PDF (OpenPDF)
+    │   │   └── ReporteExcel.java        # Exportación de inventario a .xlsx (Apache POI)
+    │   └── Servlets/                    # Controladores Web (33 Servlets con @WebServlet)
+    ├── resources/
+    │   ├── db.properties                # Configuración activa de base de datos y rutas
+    │   └── db.properties.example        # Plantilla de referencia para nuevos entornos
     └── webapp/
-        ├── *.jsp                # login, index (buscar), registrar, eliminar,
-        │                        #   ingreso, salida, historial, cambiarPassword, sidebar
-        ├── css/style.css        # tema FAINCA (amarillo/gris)
-        └── js/                  # busqueda en vivo, autocompletado, SweetAlert
+        ├── *.jsp                        # Vistas web (login, dashboard, index, actas, etc.)
+        ├── css/style.css                # Estilos corporativos FAINCA (paleta amarillo/gris)
+        ├── js/                          # Lógica frontend asíncrona (Fetch API, SweetAlert2)
+        ├── images/                      # Logotipos e isotipos estáticos de la interfaz
+        └── vendor/                      # Librerías cliente locales (FontAwesome, etc.)
 ```
 
-## Reglas de integridad (importantes)
+---
 
-- El **stock nunca se edita directo**: todo cambio pasa por un movimiento
-  (ingreso/egreso) que queda en el historial con usuario, fecha y observación.
-- **Eliminar** un producto es baja lógica (`activo = 0`): desaparece de las
-  consultas pero conserva su historial; se reactiva desde Editar.
-- La **fecha** de un movimiento es opcional: por defecto es el momento del
-  registro; se puede indicar manualmente para correcciones.
+## 👥 Control de Acceso Basado en Roles (RBAC)
 
-## Siguiente paso: pasar al servidor de la empresa
+| Rol | Alcance y Pantallas Permitidas |
+|---|---|
+| **`superadmin`** | Acceso irrestricto a todo el sistema. Es el **único rol** facultado para acceder a `usuarios.jsp` (`/UsuariosServlet`, `/EditarUsuarioServlet`, `/EliminarUsuarioServlet`) y gestionar cuentas/contraseñas. |
+| **`admin`** | Control operativo total sobre Bodega #1 (alta, edición, baja, ingresos, egresos, ajustes), Bodega de Herramientas (catálogo, actas, devoluciones, reparaciones), consulta de historial completo y generación de reportes. |
+| **`ventas`** | Consulta de stock en tiempo real (`index.jsp`), visualización de fotos de productos, exportación de reportes (`reportes.jsp`) y cambio de su propia clave (`cambiarPassword.jsp`). |
 
-1. Instalar JDK + MySQL en el servidor (o usar el MySQL existente).
-2. Crear la base con `db/schema.sql` + `db/usuarios-iniciales.sql`.
-3. Copiar la carpeta `fainca/`, ajustar `db.properties`.
-4. `mvn package` genera `target/fainca.war` para desplegar en Tomcat,
-   o correr con `mvn jetty:run` como en esta PC.
+---
+
+## 🔒 Reglas Críticas de Integridad de Datos
+
+1. **Inmutabilidad del Stock Directo**:
+   El stock de un producto o herramienta jamás se modifica mediante un simple `UPDATE ... stock = X`. Toda variación pasa obligatoriamente por una transacción controlada en la capa DAO que registra de forma simultánea el movimiento en el libro mayor (`movimientos` o `movimientos_herramientas`).
+2. **Balance de Herramientas**:
+   Para todo ítem de tipo herramienta, se cumple rigurosamente la ecuación contable:
+   $$\text{En Proyectos} = \text{Cantidad Total} - \text{Cantidad Disponible} - \text{Cantidad Dañada}$$
+   Cualquier devolución actualiza `disponible` (si fue en buen estado), `danada` (si sufrió avería) o descuenta el `total` (si fue declarada perdida).
+3. **Baja Lógica / Soft Delete**:
+   Los productos y herramientas eliminados no se borran físicamente de la base de datos (`activo = 0`), protegiendo la integridad referencial de todos los movimientos y actas pasadas. Pueden ser reactivados desde la interfaz de edición.
+4. **Protección contra Inyección SQL**:
+   El 100% de las sentencias SQL ejecutadas en la capa DAO utilizan `PreparedStatement` con asignación explícita de parámetros tipados.
+
+---
+
+## 🚀 Comandos de Construcción y Ejecución
+
+### Ejecución en Desarrollo con Jetty:
+```bash
+cd fainca
+mvn jetty:run
+```
+
+### Empaquetado de Producción (WAR):
+```bash
+cd fainca
+mvn clean package
+```
+El archivo `target/fainca.war` generado está listo para desplegarse en **Apache Tomcat 10.1+** o **Eclipse Jetty 11+**.
